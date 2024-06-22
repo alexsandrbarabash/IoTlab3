@@ -68,6 +68,7 @@ def on_connect(client, userdata, flags, rc):
 
 
 def on_message(client, userdata, msg):
+    print('alex')
     try:
         payload: str = msg.payload.decode("utf-8")
         # Create ProcessedAgentData instance with the received data
@@ -79,12 +80,17 @@ def on_message(client, userdata, msg):
             "processed_agent_data", processed_agent_data.model_dump_json()
         )
         processed_agent_data_batch: List[ProcessedAgentData] = []
+    
+        print(redis_client.llen("processed_agent_data") >= BATCH_SIZE)
         if redis_client.llen("processed_agent_data") >= BATCH_SIZE:
             for _ in range(BATCH_SIZE):
                 processed_agent_data = ProcessedAgentData.model_validate_json(
                     redis_client.lpop("processed_agent_data")
                 )
                 processed_agent_data_batch.append(processed_agent_data)
+
+        print('alex')
+
         if store_adapter.save_data(processed_agent_data_batch=processed_agent_data_batch):
             return {"status": "ok"}
         else:
